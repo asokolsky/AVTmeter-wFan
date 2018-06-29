@@ -9,7 +9,8 @@ class Screen
 public:
   Screen()
   {
-
+    m_units[0] = 0;
+    m_units[1] = 0;
   }
 
   static void switchToNext();
@@ -28,6 +29,11 @@ public:
    */
   virtual bool onActivate();
   virtual bool onDeActivate();
+  /**
+   * keyboard input handlers
+   */
+  virtual bool onClick();
+  
   /**
    * called from loop to update active screen
    * This is where V in MVC is updated
@@ -49,6 +55,8 @@ protected:
   /** when next tick should happen */
   unsigned long int m_ulNextTick = 0;
 
+  const char *m_units[2];
+
 private:
   static Screen *screens[];
 };
@@ -60,12 +68,7 @@ extern Screen *g_pActiveScreen;
 class VAScreen : public Screen
 {
 public:
-  VAScreen() : Screen()
-  {
-
-  }
-
-  bool onActivate();
+  VAScreen();
   void update(unsigned long ulNow);
   void tick(unsigned long ulNow);
 
@@ -82,13 +85,16 @@ extern VAScreen g_theVAScreen;
 class WTScreen : public Screen
 {
 public:  
-  WTScreen() : Screen()
-  {
-
-  }
-  bool onActivate();
+  /** the temperature in C to start the fan */
+  byte m_tempStart = 20;
+  /** the maximum temperature in C when fan is at 100% */
+  byte m_tempFull = 50;
+  
+  WTScreen();
   void update(unsigned long ulNow);
   void tick(unsigned long ulNow);
+
+  void onTemperature(byte temp); 
 
   double m_watts;
   double m_wattsDisplayed;
@@ -104,11 +110,7 @@ extern WTScreen g_theWTScreen;
 class T1T2Screen : public Screen
 {
 public:
-  T1T2Screen() : Screen()
-  {
-    m_ulNextTick = (unsigned long)-1;
-  }
-  bool onActivate();
+  T1T2Screen();
   void update(unsigned long ulNow);
   //void tick(unsigned long ulNow);
 };
@@ -127,8 +129,13 @@ public:
   bool onActivate();
   //void update(unsigned long ulNow);
   //void tick(unsigned long ulNow);
+  bool onClick();
+  
   void showVersion();
   void statusMessage(const char *msg);
+  
+private:
+  bool m_bVersionDisplayed = false;
 };
 extern AboutScreen g_theAboutScreen;
 

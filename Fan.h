@@ -37,15 +37,17 @@ public:
   }
   void stop()
   {
+    if(m_pwm == 0)
+      return;
     DEBUG_PRINTLN("Stopping fan...");
-    spin(LOW);
+    spin(0);
   }
   /** spin the fan at this pwm */
   void spin(unsigned short pwm)
   {
     analogWrite(m_pinFan, pwm);
     m_pwm = pwm;
-    DEBUG_PRINT("analogWrite("); DEBUG_PRNT(m_pinFan); DEBUG_PRINT(", "); DEBUG_PRNT(pwm); DEBUG_PRINTLN(")");
+    //DEBUG_PRINT("analogWrite("); DEBUG_PRNT(m_pinFan); DEBUG_PRINT(", "); DEBUG_PRNT(pwm); DEBUG_PRINTLN(")");
   }
   /** */
   void setup()

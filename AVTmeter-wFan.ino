@@ -25,33 +25,39 @@ MyPinButton g_theButton(pinButton);
 bool MyPinButton::onUserInActivity(unsigned long ulNow)
 {
   DEBUG_PRINTLN("MyPinButton::onUserInActivity");
+  return false;
 }
 bool MyPinButton::onKeyAutoRepeat()
 {
   DEBUG_PRINTLN("MyPinButton::onKeyAutoRepeat");
+  return false;
 }
 bool MyPinButton::onKeyDown()
 {
   DEBUG_PRINTLN("MyPinButton::onKeyDown");
+  return false;
 }
 bool MyPinButton::onLongKeyDown()
 {
   DEBUG_PRINTLN("MyPinButton::onLongKeyDown");
+  return false;
 }
 bool MyPinButton::onKeyUp(bool bLong)
 {
   DEBUG_PRINTLN("MyPinButton::onKeyUp");
+  return false;
 }
 bool MyPinButton::onClick()
 {
   DEBUG_PRINTLN("MyPinButton::onClick");
   if(g_pActiveScreen != 0)
-    g_pActiveScreen->switchToNext();
-
+    return g_pActiveScreen->onClick();
+  return false;
 }
 bool MyPinButton::onDoubleClick()
 {
   DEBUG_PRINTLN("MyPinButton::onDoubleClick");
+  return false;
 }
 
 /**
@@ -114,7 +120,7 @@ void setup()
   delay(2*1000);
 
   fansSetup4();
-  g_theAboutScreen.statusMessage("Fans at min PWM...");
+  g_theAboutScreen.statusMessage("Fan at min PWM...");
   delay(2*1000);
   Screen::switchToNext();
 }
@@ -124,20 +130,6 @@ void loop()
 {
   if(g_pActiveScreen != 0)
     g_pActiveScreen->loop();
-/*
-  static byte uLoop = 0;
-  switch(uLoop % 2)
-  {
-    case 0:
-      loopVolts();
-      break;
-    case 1:
-      loopAmps();
-      break;
-  }
-  uLoop++;
-  delay(200);
-  */
 }
 
 
