@@ -1,0 +1,263 @@
+#include <Arduino.h>
+#include <U8x8lib.h>
+#include <string.h>
+#ifdef U8X8_HAVE_HW_SPI
+#include <SPI.h>
+#endif
+#ifdef U8X8_HAVE_HW_I2C
+#include <Wire.h>
+#endif
+
+//U8X8_SSD1306_128X64_NONAME_HW_I2C u8x8(/* reset=*/ U8X8_PIN_NONE);
+U8X8_SH1106_128X64_NONAME_HW_I2C u8x8(/* reset=*/ U8X8_PIN_NONE);
+
+/**
+ * Returns:  Vcc in millivolts
+ */
+long readVcc() 
+{
+    // Read 1.1V reference against AVcc
+    // set the reference to Vcc and the measurement to the internal 1.1V reference
+#if defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
+    ADMUX = _BV(REFS0) | _BV(MUX4) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
+#elif defined (__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
+    ADMUX = _BV(MUX5) | _BV(MUX0);
+#elif defined (__AVR_ATtiny25__) || defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__)
+    ADMUX = _BV(MUX3) | _BV(MUX2);
+#else
+    ADMUX = _BV(REFS0) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
+#endif 
+    delay(2); // Wait for Vref to settle
+    ADCSRA |= _BV(ADSC); // Start conversion
+    while (bit_is_set(ADCSRA,ADSC)); // measuring
+
+    uint8_t low  = ADCL; // must read ADCL first - it then locks ADCH 
+    uint8_t high = ADCH; // unlocks both
+
+    long result = (high<<8) | low;
+    result = 1125300L / result; // Calculate Vcc (in mV); 1125300 = 1.1*1023*1000
+    return result;
+}
+
+/**
+ * Averages analogRead over 100 samples.
+ * Takes at least 300ms to return
+ */
+float analogReadAveraged(int iPin)
+{
+    const short int iSamples = 100;
+    float samples = 0.0;
+    for (int i = 0; i < iSamples; i++)   //Get this many samples
+    { 
+        float sample = analogRead(iPin); //Read current sensor values
+        samples += sample;               //Add samples together
+        delay (3);                       // let ADC settle before next sample 3ms
+    }
+    return samples/iSamples;
+}
+
+void setup() 
+{
+    Serial.begin(115200);
+
+    u8x8.begin();
+    u8x8.setPowerSave(0);
+    u8x8.setFont(u8x8_font_chroma48medium8_r);
+
+    //corectie offset senzor curent ACS712,ruleaza o sg data la pornire
+    float AvgAcsOffset = analogReadAveraged(A3);
+    
+    double VccOffset = readVcc()/1000.0;       //Arduino voltage(Acs712 supplied voltage - Operating voltage);1000>cred ca citeste in mV !
+    double vccOffset = VccOffset/2.0;          //Reference Voltage
+
+    //((AvgAcs * (5.0 / 1024.0)) is convering the read voltage in 0-5 volts
+    //2.5 is offset(I assumed that arduino is working on 5v so the viout at no current comes
+    //out to be 2.5 which is out offset. If your arduino is working on different voltage than
+    //you must change the offset according to the input voltage)
+    //0.185v(185mV) is rise in output voltage when 1A current flows at input
+                                                                           
+    float AcsValueOffset = (vccOffset - (AvgAcsOffset * (VccOffset / 1024.0)) )/0.100;
+    Serial.print("I_Offset_boot="); Serial.println(AcsValueOffset);
+    delay(10);
+                       
+    /*
+    // optional print I_Offset
+       
+    u8x8.setFont(u8x8_font_chroma48medium8_r);
+    
+    u8x8.setCursor(1,0);
+    u8x8.print("IoffS=");
+    delay(10);
+    u8x8.print(AcsValueOffset,3);
+    u8x8.print("A");
+    delay(10);
+    Serial.print("I_Offset_setup=");Serial.println(AcsValueOffset);
+    delay(10);
+    
+    delay(1000);
+    u8x8.clear();
+    delay(10);
+    //final citire curent I_Offset 
+    */
+
+    u8x8.draw2x2String(0,0," Power");
+    delay(100);
+    u8x8.draw2x2String(0,2," Supply");
+    delay(200);
+    u8x8.draw2x2String(0,4,"   v4");
+    delay(500);
+    uint8_t tiles[16] = { 0x0f,0x0f,0x0f,0x0f,0xf0,0xf0,0xf0,0xf0, 1, 3, 7, 15, 31, 63, 127, 255};
+
+    for (int j = 0; j<= 14 ; j++)
+    {
+      u8x8.drawTile(j , 6, 2, tiles); //x0,y0,tile_tip>de la 1-7 cred
+      delay(10);
+    }   
+    delay(1000);
+   
+   
+    if (AcsValueOffset > 0.18)
+    {
+        for(int j=1 ; j <= 3 ; j++)
+        {
+            u8x8.clear();
+            delay(1000);
+            u8x8.setCursor(1,0);
+            u8x8.draw2x2String(1,1,"REMOVE  ");
+            u8x8.setCursor(1,4);
+            u8x8.draw2x2String(1,3," LOAD ");
+            delay(1000);
+        }
+   }
+   delay(1000);
+   u8x8.clear();
+   delay(10);
+}
+
+void loop() 
+{                       
+    //Serial.begin(9600);     //pt pb afisare I_Offset
+
+    //corectie offset senzor curent ACS712,ruleaza o sg data la pornire
+
+    //float AcsOffset=0.0,SamplesOffset=0.0,AvgAcsOffset=0.0,AcsValueOffset=0.0;                       
+    float AvgAcsOffset = analogReadAveraged(A3);
+
+    //stabilire tensiune echivalenta cu I=0 ( uzual 2,5V = 1/2 * 5V )
+    double VccOffset = readVcc()/1000.0;                       //Arduino voltage(Acs712 supplied voltage - Operating voltage);1000>cred ca citeste in mV !
+    double vccOffset = VccOffset/2.0;                            //Reference Voltage
+    //((AvgAcs * (5.0 / 1024.0)) is converitng the read voltage in 0-5 volts
+    //2.5 is offset(I assumed that arduino is working on 5v so the viout at no current comes
+    //out to be 2.5 which is out offset. If your arduino is working on different voltage than
+    //you must change the offset according to the input voltage)
+    //0.185v(185mV) is rise in output voltage when 1A current flows at input
+                                                                           
+    float AcsValueOffset = (vccOffset - (AvgAcsOffset * (VccOffset / 1024.0)) )/0.100;
+                           
+/*  bool Load = false;
+    if (AcsValueOffset>0.18)
+    {
+        bool Load = true;
+    }
+    Serial.print(Load);*/
+    delay(10);
+
+    //  print I_Offset pe LCD, doar dupa start sau reset board
+    u8x8.setFont(u8x8_font_chroma48medium8_r);
+    u8x8.setCursor(0,8);
+    u8x8.print("Ioff = ");
+    delay(10);
+    u8x8.print(AcsValueOffset,2);
+    u8x8.print(" A");
+    delay(10);
+    Serial.print("I_Offset_loop=");Serial.println(AcsValueOffset);
+    delay(10);
+
+    // intrare in ciclul "principal"
+    for(;;)
+    {                                       
+        //mediere curent I
+        //float AcsValue=0.0,Samples=0.0,AvgAcs=0.0,AcsValueF=0.0;
+        /*
+        for (int x = 0; x < 150; x++){   //Get 150 samples
+            AcsValue = analogRead(A3);      //Read current sensor values
+            Samples = Samples + AcsValue;   //Add samples together
+            delay (3);                      // let ADC settle before next sample 3ms
+        }
+        AvgAcs=Samples/150;                //Taking Average of Samples
+        */
+        float AvgAcs = analogReadAveraged(A3);
+
+                       
+        double Vcc = readVcc()/1000.0;   //Arduino voltage(Acs712 supplied voltage - Operating voltage)
+        double vcc = Vcc/2.0;              //Reference Voltage
+        //((AvgAcs * (5.0 / 1024.0)) is converitng the read voltage in 0-5 volts
+        //2.5 is offset(I assumed that arduino is working on 5v so the viout at no current comes
+        //out to be 2.5 which is out offset. If your arduino is working on different voltage than
+        //you must change the offset according to the input voltage)
+        //0.185v(185mV) is rise in output voltage when 1A current flows at input
+                       
+        float AcsValueF = (vcc - (AvgAcs * (Vcc / 1024.0)) )/0.100;
+        AcsValueF = AcsValueF - AcsValueOffset;      //corectie offset senzor curent ACS712
+        //final mediere curent
+        AcsValueF = abs(AcsValueF); //elimin semn - masor doar curent pozitiv
+/*
+        //curent ne-mediat
+        float AcsValueF=0.0;
+        AcsValueF = analogRead(A3);
+        double Vcc,vcc;
+        Vcc = readVcc()/1000.0;   //Arduino voltage(Acs712 supplied voltage - Operating voltage)
+        vcc=Vcc/2.0;              //Reference Voltage
+        //((AvgAcs * (5.0 / 1024.0)) is converitng the read voltage in 0-5 volts
+        //2.5 is offset(I assumed that arduino is working on 5v so the viout at no current comes
+        //out to be 2.5 which is out offset. If your arduino is working on different voltage than
+        //you must change the offset according to the input voltage)
+        //0.185v(185mV) is rise in output voltage when 1A current flows at input
+        
+        AcsValueF = (vcc - (AcsValueF * (Vcc / 1024.0)) )/0.100;
+        AcsValueF = AcsValueF - AcsValueOffset;      //corectie offset senzor curent ACS712
+        //final curent ne-mediat
+*/                       
+        float Rdown=2200;
+        float Rup=10000;
+        float k_divider=1;
+        float k_calibrare = 23.68/22.77 ;      //CA5275 23.67 ; Fluke:20V fluke=19.28V Oled->20.00/19.28
+        k_divider= (Rup+Rdown) / Rdown ;
+        float k= 5* k_divider;                    //Divizor 2K2 JOS/ 10K SUS//ERA        
+        k = k * k_calibrare;
+
+        //mediere tensiune
+        float Vin = analogReadAveraged(A2);
+        //final mediere tensiune
+                       
+        //Print the I on Serial monitor
+        //display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3D (for the 128x64)
+                       
+        char I[32] ;
+        char V[32] ;
+        dtostrf(AcsValueF, 6, 2, I);
+        dtostrf(Vin, 6, 2, V);
+        Serial.print("I="); Serial.println(I);
+        Serial.print("V="); Serial.println(V);
+                           
+
+        u8x8.setFont(u8x8_font_pxplusibmcga_r);
+        delay(10);
+       /*                     
+       if(Load = true)
+       {
+        u8x8.Inverse();
+       }
+       */
+//Print I pe LCD
+        u8x8.draw2x2String(-2, 2, I); 
+        u8x8.draw2x2String(10,2," A");
+        delay(10);
+//Print V pe LCD                   
+        //u8x8.Inverse();
+        u8x8.draw2x2String(-2, 4, V);
+        u8x8.draw2x2String(10,4," V");                           
+        delay(10);
+    }
+}
+
