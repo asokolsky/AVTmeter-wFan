@@ -8,7 +8,7 @@ Small panel Volt/Amp meter.  Also measures (external) temerature and drives PWM 
 
 ## User Manual
 
-Upon startart up the meter spins up fans.  First at start-up then at full then at minimum speed.
+Upon power-up the meter spins up fans.  First at start-up then at full then at minimum speed.
 Press and hold the button to freeze the display.
 Use the button click to switch between the screens.  The following screens are available:
 
@@ -43,3 +43,8 @@ Thanks to Bill Greiman for wonderful https://github.com/greiman/SSD1306Ascii
 
 - connect amp sensor
 - connect ADC
+
+## Similar Projects
+
+http://www.djerickson.com/arduino/ardpm.html
+
