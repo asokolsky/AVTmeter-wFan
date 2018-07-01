@@ -39,6 +39,8 @@ FastWrite - it is unclear to me how dramatic the benefits are, yet I decided to 
 
 MCP3426 support is provided by:
 https://github.com/uChip/MCP342X
+https://github.com/stevemarple/MCP342x
+https://github.com/kerrydwong/MCP342X
 
 
 ## TODO
