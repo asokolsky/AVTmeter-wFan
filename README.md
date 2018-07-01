@@ -30,7 +30,16 @@ ULN2003 darlingtons drive fan(s).
 
 ## Software
 
-Thanks to Bill Greiman for wonderful https://github.com/greiman/SSD1306Ascii
+### Dependencies
+
+Thanks to Bill Greiman for a wonderful https://github.com/greiman/SSD1306Ascii
+It wins over U8G2 (or rather U8x8) by providing font support and small memory footprint.
+
+FastWrite - it is unclear to me how dramatic the benefits are, yet I decided to try it.
+
+MCP3426 support is provided by:
+https://github.com/uChip/MCP342X
+
 
 ## TODO
 
