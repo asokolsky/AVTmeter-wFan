@@ -2,14 +2,16 @@
 #include <Wire.h>
 #include <SSD1306Ascii.h>
 #include <SSD1306AsciiWire.h>
+#include <MCP342x.h>
 #include "Trace.h"
-#include "PinButton.h"
+#include "Pin2Button.h"
 #include "Screen.h"
 #include "Display.h"
 #include "LM35.h"
 #include "Fan.h"
 #include "Led.h"
 
+extern MCP342x g_adc;
 
 Screen *g_pActiveScreen = 0;
 VAScreen g_theVAScreen;
@@ -160,6 +162,30 @@ void clearValue(uint8_t row)
   g_theDisplay.clear(col0, col1, row, row + rows - 1);
 }
 
+uint8_t convertAndRead(MCP342x::Channel channel, long &value)
+{
+  value = 0;
+  MCP342x::Config status;
+  // Initiate a conversion; convertAndRead() will wait until it can be read
+  uint8_t err = g_adc.convertAndRead(
+    channel, 
+    MCP342x::oneShot, 
+    MCP342x::resolution16, 
+    MCP342x::gain1,
+    1000000, // time out value in microseconds
+    value, 
+    status);
+  if(err)
+  {
+    Serial.print("ADC read error: "); Serial.println(err);
+  } 
+  else 
+  {
+    Serial.print("ADC "); Serial.print(channel); Serial.print(": "); Serial.println(value);
+  }
+  return err;
+}
+
 /**
  * Measure voltage and amperage here
  */
@@ -168,9 +194,27 @@ void VAScreen::tick(unsigned long ulNow)
   unsigned uUpdatePeriod = (this == g_pActiveScreen) ? 10 : 4000;
   m_ulNextTick = ulNow + uUpdatePeriod;
 
-  
-  m_volts = 2.0 + sin(0.001 * ulNow); // 0.01*random(1, 6000);
-  m_amps = 0.01 * random(1, 6000);  
+  long value;
+  uint8_t err = convertAndRead(MCP342x::channel1, value);
+  if(err)
+  {
+    ; //Serial.print("ADC read error: "); Serial.println(err);
+  } 
+  else 
+  {
+    // Serial.print("ADC ch1: "); Serial.println(value);
+    m_volts = value; // 2.0 + sin(0.001 * ulNow); // 0.01*random(1, 6000);
+  }
+  err = convertAndRead(MCP342x::channel2, value);
+  if(err)
+  {
+    ; //Serial.print("ADC read error: "); Serial.println(err);
+  } 
+  else 
+  {
+    // Serial.print("ADC ch1: "); Serial.println(value);
+    m_amps = value; // 0.01 * random(1, 6000);
+  }
 }
 
 /**
