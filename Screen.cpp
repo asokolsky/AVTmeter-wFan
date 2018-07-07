@@ -19,8 +19,9 @@ WTScreen g_theWTScreen;
 T1T2Screen g_theT1T2Screen;
 AboutScreen g_theAboutScreen;
 
-/** all the existing screens */
-Screen *Screen::screens[] = {
+/** all the existing screens to switch through */
+Screen *Screen::screens[] = 
+{
   &g_theAboutScreen,
   &g_theVAScreen,
   &g_theWTScreen,
@@ -32,7 +33,7 @@ Screen *Screen::screens[] = {
  */
 void Screen::switchToNext()
 {
-  static byte uActiveScreen = 100;
+  static byte uActiveScreen = 100; // index into Screen::screens
 
   DEBUG_PRINTLN("Screen::switchToNext");
   uActiveScreen++;
@@ -88,22 +89,8 @@ bool Screen::onActivate()
   m_ulNextUpdate = 0; // update asap
 
   g_theDisplay.setFont(OpenSans20b); // Callibri19); // ZevvPeep8x16); //OpenSans26
-  //oled.setFont(lcdnums12x16);   
-//  oled.setFont(Callibri15);
-// oled.setFont(Arial14);
-// oled.setFont(Callibri11_bold);
-// oled.setFont(TimesNewRoman13);
-
   // Increase space between letters.
   g_theDisplay.setLetterSpacing(2);
-  
-  // Allow two or more pixels after value.
-  //col1 = col0 + oled.strWidth("99.9") + 2;
-  
-  // Line height in rows.
-  //rows = oled.fontRows();
-  //DEBUG_PRINT("rows = "); DEBUG_PRINTDEC(rows); DEBUG_PRINTLN("");
-
   // Print units
   uint8_t offset = 1;
   for (uint8_t i = 0; i < (sizeof(m_units) /sizeof(m_units[0])); i++)
@@ -112,7 +99,6 @@ bool Screen::onActivate()
     if(m_units[i] != 0)
       g_theDisplay.print(m_units[i]);
   }
-  //delay(3000);
   g_theDisplay.setFont(lcdnums14x24); //lcdnums12x16);
   g_theDisplay.setLetterSpacing(3);
 }
@@ -136,7 +122,7 @@ void Screen::tick(unsigned long ulNow)
  */
 void Screen::update(unsigned long ulNow)
 {
-  m_ulNextUpdate = ulNow + 10;
+  m_ulNextUpdate = ulNow + 20;
 }
 /**
  * Default key click handler
@@ -172,10 +158,10 @@ uint8_t convertAndRead(MCP342x::Channel channel, long &value)
     MCP342x::oneShot, 
     MCP342x::resolution16, 
     MCP342x::gain1,
-    1000000, // time out value in microseconds
+    1000000, // time out value in microseconds - 1s
     value, 
     status);
-  if(err)
+  if(err != 0)
   {
     Serial.print("ADC read error: "); Serial.println(err);
   } 
@@ -195,24 +181,14 @@ void VAScreen::tick(unsigned long ulNow)
   m_ulNextTick = ulNow + uUpdatePeriod;
 
   long value;
-  uint8_t err = convertAndRead(MCP342x::channel1, value);
-  if(err)
+  uint8_t err = convertAndRead(MCP342x::channel1, value); // read volts from ch1
+  if(err == 0)
   {
-    ; //Serial.print("ADC read error: "); Serial.println(err);
-  } 
-  else 
-  {
-    // Serial.print("ADC ch1: "); Serial.println(value);
     m_volts = value; // 2.0 + sin(0.001 * ulNow); // 0.01*random(1, 6000);
   }
-  err = convertAndRead(MCP342x::channel2, value);
-  if(err)
+  err = convertAndRead(MCP342x::channel2, value);   // read amps from ch2
+  if(err == 0)
   {
-    ; //Serial.print("ADC read error: "); Serial.println(err);
-  } 
-  else 
-  {
-    // Serial.print("ADC ch1: "); Serial.println(value);
     m_amps = value; // 0.01 * random(1, 6000);
   }
 }
