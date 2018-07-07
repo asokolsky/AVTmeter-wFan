@@ -1,0 +1,69 @@
+#include <Arduino.h>
+#include <Wire.h>
+#include <U8g2lib.h>
+//#include <U8x8lib.h>
+
+#include "Trace.h"
+
+//U8G2_SSD1306_128X64_NONAME_F_HW_I2C g_u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
+U8G2_SH1106_128X64_NONAME_F_HW_I2C g_u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
+//U8G2_SH1106_128X64_NONAME_1_HW_I2C g_u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
+//U8X8_SH1106_128X64_NONAME_HW_I2C g_u8g2();
+ 
+void setup() 
+{
+  Serial.begin(115200);
+  delay(1000);   
+  //while(!Serial)  ; // wait for serial port to connect. Needed for Leonardo only
+  DEBUG_PRINTLN("Meter test!");
+
+  g_u8g2.begin();
+  //g_uDisplayWidth = g_u8g2.getWidth();
+  //g_uColUnits = g_u8g2.getWidth() - 35; 
+  //g_uDisplayHeight = g_u8g2.getHeight();
+
+}
+
+void drawLine(uint8_t iRow, int16_t iValue, const char *szUnits)
+{
+  g_u8g2.setFont(u8g2_font_helvR24_tn); // numbers only font
+  char buf[80];
+  //sprintf(buf, "%5.3i", iValue);
+  sprintf(buf, "%i", iValue);
+  //int x = g_u8g2.getWidth() - 30 - g_u8g2.getStrWidth(buf) - 5;
+  int x = 0;
+  g_u8g2.drawStr(x, iRow, buf);
+  // draw units
+  g_u8g2.setFont(u8g2_font_helvR18_tr); // reduced set - ASCI only
+  g_u8g2.drawStr(g_u8g2.getWidth() - 40, iRow, szUnits);
+}
+
+
+
+void loop() 
+{
+  const int8_t iTitleBarHeight = 0;
+  const int8_t iLineHeight = 27;
+  const int8_t iLineGap = 5;
+  u8g2_uint_t iRow = iLineHeight + iTitleBarHeight;
+  unsigned long ulNow = millis();
+  //current_mA = (float)ulNow;
+
+  // 
+  // update the display
+  //
+  // g_u8g2.firstPage(); do {
+  g_u8g2.clearBuffer();
+ 
+    //drawTitleBar(g_iDisplayUpdate);
+    
+    drawLine(iRow, (int16_t)ulNow, "mA");
+  
+    iRow += iLineHeight + iLineGap;
+    //loadVoltage_mV = (float)millis();
+    drawLine(iRow, (int16_t)1234, "mV");
+    
+  g_u8g2.sendBuffer();  
+  //} while (g_u8g2.nextPage());  
+}
+
