@@ -76,21 +76,28 @@ void setup()
   Screen::switchToNext();
   delay(2*1000);
 
-  fansSetup1();
   g_theAboutScreen.showVersion();
-  delay(2*1000);
   
-  fansSetup2();
-  g_theAboutScreen.statusMessage("Fan at start PWM...");
-  delay(2*1000);
-  
-  fansSetup3();
-  g_theAboutScreen.statusMessage("Fan at max PWM...");
-  delay(2*1000);
-
-  fansSetup4();
-  g_theAboutScreen.statusMessage("Fan at min PWM...");
-  delay(2*1000);
+  static const void *foos[] = 
+  {
+    fansSetup1,
+    fansSetup2,
+    fansSetup3,
+    fansSetup4
+  };
+  static const char *msgs[] = 
+  {
+    "",
+    "Fan at start PWM...",
+    "Fan at max PWM...",
+    "Fan at min PWM..."
+  };
+  for(int8_t i = 0; i < (sizeof(foos) / sizeof(foos[0])); i++)
+  {
+    (foos[i])();
+    g_theAboutScreen.statusMessage(msgs[i]);
+    delay(2*1000);
+  }
   Screen::switchToNext();
 
   // Reset devices
@@ -99,10 +106,13 @@ void setup()
   
   // Check device present
   Wire.requestFrom(adc_address, (uint8_t)1);
-  if (!Wire.available()) {
+  if (!Wire.available()) 
+  {
     Serial.print("No ADC @"); Serial.println(adc_address, HEX);
     //while (1) ;
-  } else {
+  } 
+  else 
+  {
     Serial.print("ADC found @"); Serial.println(adc_address, HEX);
   }
   
