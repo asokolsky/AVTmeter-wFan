@@ -72,6 +72,8 @@ public:
   void update(unsigned long ulNow);
   void tick(unsigned long ulNow);
 
+  bool onActivate();
+
   double m_volts = 0;
   double m_voltsDisplayed = 0;
   double m_amps = 0;
@@ -93,6 +95,7 @@ public:
   WTScreen();
   void update(unsigned long ulNow);
   void tick(unsigned long ulNow);
+  bool onActivate();
 
   void onTemperature(byte temp); 
 

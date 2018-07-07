@@ -1,3 +1,5 @@
+#pragma once
+
 /**
  * LED connected to an output pin
  */

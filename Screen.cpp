@@ -7,11 +7,10 @@
 #include "Pin2Button.h"
 #include "Screen.h"
 #include "Display.h"
+#include "MCP3426.h"
 #include "LM35.h"
 #include "Fan.h"
 #include "Led.h"
-
-extern MCP342x g_adc;
 
 Screen *g_pActiveScreen = 0;
 VAScreen g_theVAScreen;
@@ -148,30 +147,6 @@ void clearValue(uint8_t row)
   g_theDisplay.clear(col0, col1, row, row + rows - 1);
 }
 
-uint8_t convertAndRead(MCP342x::Channel channel, long &value)
-{
-  value = 0;
-  MCP342x::Config status;
-  // Initiate a conversion; convertAndRead() will wait until it can be read
-  uint8_t err = g_adc.convertAndRead(
-    channel, 
-    MCP342x::oneShot, 
-    MCP342x::resolution16, 
-    MCP342x::gain1,
-    1000000, // time out value in microseconds - 1s
-    value, 
-    status);
-  if(err != 0)
-  {
-    Serial.print("ADC read error: "); Serial.println(err);
-  } 
-  else 
-  {
-    Serial.print("ADC "); Serial.print(channel); Serial.print(": "); Serial.println(value);
-  }
-  return err;
-}
-
 /**
  * Measure voltage and amperage here
  */
@@ -180,17 +155,8 @@ void VAScreen::tick(unsigned long ulNow)
   unsigned uUpdatePeriod = (this == g_pActiveScreen) ? 10 : 4000;
   m_ulNextTick = ulNow + uUpdatePeriod;
 
-  long value;
-  uint8_t err = convertAndRead(MCP342x::channel1, value); // read volts from ch1
-  if(err == 0)
-  {
-    m_volts = value; // 2.0 + sin(0.001 * ulNow); // 0.01*random(1, 6000);
-  }
-  err = convertAndRead(MCP342x::channel2, value);   // read amps from ch2
-  if(err == 0)
-  {
-    m_amps = value; // 0.01 * random(1, 6000);
-  }
+  m_volts = g_adc.getVolts();
+  m_amps = g_adc.getAmps();
 }
 
 /**
@@ -213,6 +179,12 @@ void VAScreen::update(unsigned long ulNow)
     clearValue(1*rows);
     g_theDisplay.print(m_amps, (m_amps < 10.0) ? 3 : 2);
   }
+}
+
+bool VAScreen::onActivate()
+{
+  m_ampsDisplayed = m_voltsDisplayed = 0;
+  Screen::onActivate();
 }
 
 /**
@@ -293,6 +265,12 @@ void WTScreen::update(unsigned long ulNow)
     clearValue(1*rows);
     g_theDisplay.print((unsigned int)m_temp);
   }
+}
+
+bool WTScreen::onActivate()
+{
+  m_wattsDisplayed = m_tempDisplayed = 0;
+  Screen::onActivate();
 }
 
 /**

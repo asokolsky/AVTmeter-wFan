@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include <Wire.h>
 #include <SSD1306Ascii.h>
 #include <SSD1306AsciiWire.h>
@@ -7,13 +8,10 @@
 #include "Fan.h"
 #include "Screen.h"
 #include "Display.h"
+#include "MCP3426.h"
 #include "LM35.h"
 #include "Led.h"
 #include "pcb.h"
-
-// 0x68 is the default address for all MCP342x devices
-const uint8_t adc_address = 0x68;
-MCP342x g_adc = MCP342x(adc_address);
 
 
 /** the overheating (builtin) led is on pin 13 */
@@ -73,12 +71,13 @@ void setup()
   g_led.setup();
      
   g_theDisplay.setup();
-  Screen::switchToNext();
+  Screen::switchToNext(); // this will show a splash part of the About screen
   delay(2*1000);
 
   g_theAboutScreen.showVersion();
   
-  static const void *foos[] = 
+  typedef void (* fooptr)();
+  static const fooptr foos[] = 
   {
     fansSetup1,
     fansSetup2,
@@ -94,28 +93,12 @@ void setup()
   };
   for(int8_t i = 0; i < (sizeof(foos) / sizeof(foos[0])); i++)
   {
-    (foos[i])();
+    foos[i]();
     g_theAboutScreen.statusMessage(msgs[i]);
     delay(2*1000);
   }
   Screen::switchToNext();
-
-  // Reset devices
-  MCP342x::generalCallReset();
-  delay(1); // MC342x needs 300us to settle, wait 1ms
-  
-  // Check device present
-  Wire.requestFrom(adc_address, (uint8_t)1);
-  if (!Wire.available()) 
-  {
-    Serial.print("No ADC @"); Serial.println(adc_address, HEX);
-    //while (1) ;
-  } 
-  else 
-  {
-    Serial.print("ADC found @"); Serial.println(adc_address, HEX);
-  }
-  
+  g_adc.setup();
 }
 
 

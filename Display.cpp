@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include <Wire.h>
 #include <SSD1306Ascii.h>
 #include <SSD1306AsciiWire.h>
