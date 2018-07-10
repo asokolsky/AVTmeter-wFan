@@ -20,7 +20,6 @@ public:
     m_pinFan(pinFan), m_pinSensor(pinSensor)
   {
   }
-  
   bool isSpinning()
   {
     return (m_pwm != 0);
@@ -49,14 +48,8 @@ public:
     m_pwm = pwm;
     //DEBUG_PRINT("analogWrite("); DEBUG_PRNT(m_pinFan); DEBUG_PRINT(", "); DEBUG_PRNT(pwm); DEBUG_PRINTLN(")");
   }
-  /** */
-  void setup()
-  {
-    pinMode(m_pinFan, OUTPUT);
-    if(m_pinSensor > 0)
-      pinMode(m_pinSensor, INPUT);
-  }
-
+  /** setup the fan */
+  void setup();
 
   /**
    * utility to find the min PWM at which this fan starts
@@ -103,5 +96,3 @@ inline unsigned short fansGetPWM()
 {
   return g_fan[0].getPWM();
 }
-
-

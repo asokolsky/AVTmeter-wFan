@@ -3,6 +3,33 @@
 #include "Fan.h"
 #include "pcb.h"
 
+/**
+ * fan sensor increments this
+ */
+volatile byte g_bFanTick = 0;
+
+/**
+ * fan sense pin causes this interrupt
+ */
+static void fanISR()
+{
+  g_bFanTick++;
+}
+
+/** 
+ * Setup the fan
+ */
+void Fan::setup()
+{
+  pinMode(m_pinFan, OUTPUT);
+  if(m_pinSensor > 0)
+  {
+    pinMode(m_pinSensor, INPUT_PULLUP);
+    attachInterrupt(digitalPinToInterrupt(m_pinSensor), fanISR, CHANGE);
+  }
+}
+
+
 /** These are the fans we control */
 Fan g_fan[] = {
   {pinFan1pwm, pinFan1sen},
@@ -44,7 +71,6 @@ void fansSetup1()
   
   for(short int i = 0; i < iFans; i++)
     g_fan[i].setup();
-  //attachInterrupt(0, onHallSensor, RISING);
   //g_fan[0].test();
 
   //
@@ -60,10 +86,19 @@ void fansSetup2()
   //
   // spin the fan at start PWM
   //
-  DEBUG_PRINTLN("Spinning fans at start PWM..."); 
+  DEBUG_PRINTLN("Spinning fans at start PWM...");
+  byte bFanTick = g_bFanTick;
   for(short int i = 0; i < iFans; i++)
     g_fan[i].start();
   delay(4*1000);
+  if(bFanTick == g_bFanTick)
+  {
+    DEBUG_PRINTLN("Fan seem to be absent or failed to start!");
+  }
+  else
+  {
+    DEBUG_PRINT("Fan ticks="); DEBUG_PRINTDEC(g_bFanTick); DEBUG_PRINTLN("");
+  }
 }
 
 void fansSetup3()

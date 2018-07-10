@@ -62,7 +62,7 @@ public:
 
 protected:
   /** Digital pin from which we are reading */
-  uint8_t m_bPin;
+  //uint8_t m_bPin;
   /** when to fire long key */
   unsigned long m_ulToFireLongKey = 0;
   /** when to fire key auto repeat */

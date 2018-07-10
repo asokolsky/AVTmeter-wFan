@@ -88,7 +88,7 @@ class WTScreen : public Screen
 {
 public:  
   /** the temperature in C to start the fan */
-  byte m_tempStart = 20;
+  byte m_tempStart = 25;
   /** the maximum temperature in C when fan is at 100% */
   byte m_tempFull = 50;
   

@@ -75,7 +75,7 @@ double MCP3426::getVolts()
   const double dDividerFactor = 1.0; // 0.33;
   // 32767 or 0x7FFF - 2^15 - 1. The maximum signed 16 bit value.
   // 65535 or 0xFFFF - 2^16 - 1. The maximum unsigned 16 bit value.
-  return ((value * 2.048)/ (0xFFFF * dDividerFactor));
+  return ((value * 2.048)/ (32768.0 * dDividerFactor));
 }
 
 double MCP3426::getAmps()
@@ -87,7 +87,7 @@ double MCP3426::getAmps()
   const double dDividerFactor = 1.0; // 0.35;
   // 32767 or 0x7FFF - 2^15 - 1. The maximum signed 16 bit value.
   // 65535 or 0xFFFF - 2^16 - 1. The maximum unsigned 16 bit value.
-  return ((value * 2.048)/ (0xFFFF * dDividerFactor));
+  return ((value * 2.048)/ (32768.0 * dDividerFactor));
 }
 
 

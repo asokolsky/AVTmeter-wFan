@@ -64,16 +64,18 @@ uint8_t col1 = 100;  // Last value column.
 uint8_t rows = 4;      // Rows per line
 
 /**
- * by default process the button
+ * Default screen event processing loop
  */
 bool Screen::loop()
 {
   unsigned long ulNow = millis();
   if(g_theButton.getAndDispatchKey(ulNow))
     return true;
+  // let the model run if needed
   Screen::tickAll(ulNow);
   if((g_pActiveScreen != 0) && (!g_theButton.isKeyDown()) && g_pActiveScreen->isTimeToUpdate(ulNow))
   {
+    // update the view if needed
     g_pActiveScreen->update(ulNow);
   }
   return false;
@@ -85,7 +87,7 @@ bool Screen::loop()
 bool Screen::onActivate()
 {
   DEBUG_PRINTLN("Screen::onActivate");
-  m_ulNextUpdate = 0; // update asap
+  m_ulNextUpdate = 0; // will need update asap
 
   g_theDisplay.setFont(OpenSans20b); // Callibri19); // ZevvPeep8x16); //OpenSans26
   // Increase space between letters.
@@ -109,22 +111,24 @@ bool Screen::onDeActivate()
   g_theDisplay.clear();
 }
 /**
- * 
+ *  Byt default the screen wants to be ticked
+ *  every 100ms if it is active
+ *  every 4sec if it is not active
  */
 void Screen::tick(unsigned long ulNow)
 {
-  unsigned uUpdatePeriod = (this == g_pActiveScreen) ? 10 : 4000;
+  unsigned uUpdatePeriod = (this == g_pActiveScreen) ? 100 : 4000;
   m_ulNextTick = ulNow + uUpdatePeriod;
 }
 /**
- * 
+ * By default the screen wants to be redrawn every 100ms
  */
 void Screen::update(unsigned long ulNow)
 {
-  m_ulNextUpdate = ulNow + 20;
+  m_ulNextUpdate = ulNow + 100;
 }
 /**
- * Default key click handler
+ * Default key click handler - flip to the next screen
  */
 bool Screen::onClick()
 {
@@ -152,9 +156,7 @@ void clearValue(uint8_t row)
  */
 void VAScreen::tick(unsigned long ulNow)
 {
-  unsigned uUpdatePeriod = (this == g_pActiveScreen) ? 10 : 4000;
-  m_ulNextTick = ulNow + uUpdatePeriod;
-
+  Screen::tick(ulNow);
   m_volts = g_adc.getVolts();
   m_amps = g_adc.getAmps();
 }
@@ -165,7 +167,7 @@ void VAScreen::tick(unsigned long ulNow)
 void VAScreen::update(unsigned long ulNow)
 {
   //DEBUG_PRINTLN("VAScreen::update");
-  m_ulNextUpdate = ulNow + 10;
+  Screen::update(ulNow);
 
   if(m_volts != m_voltsDisplayed)
   {
@@ -200,12 +202,10 @@ WTScreen::WTScreen() : Screen()
  */
 void WTScreen::tick(unsigned long ulNow)
 {
-  unsigned uUpdatePeriod = (this == g_pActiveScreen) ? 1000 : 4000;
-  m_ulNextTick = ulNow + uUpdatePeriod;
-  
+  Screen::tick(ulNow);
+
   m_watts = g_theVAScreen.m_volts * g_theVAScreen.m_amps;
-  m_temp = g_lm35.read();
-  m_temp = (byte)(50.0 + 40.0 * sin(0.00001 * ulNow)); // random(1, 100);
+  m_temp = g_lm35.read(); // (byte)(50.0 + 40.0 * sin(0.00001 * ulNow)); // random(1, 100);
   // run the fan according to the temperature measured
   onTemperature(m_temp);
 }
@@ -252,7 +252,7 @@ void WTScreen::onTemperature(byte temp)
 void WTScreen::update(unsigned long ulNow)
 {
   //DEBUG_PRINT("WTScreen::update m_watts="); DEBUG_PRINTDEC((unsigned int)m_watts); DEBUG_PRINT(" m_temp="); DEBUG_PRINTDEC((unsigned int)m_temp); DEBUG_PRINTLN("");
-  m_ulNextUpdate = ulNow + 20;
+  Screen::update(ulNow);
   if(m_watts != m_wattsDisplayed)
   {
     m_wattsDisplayed = m_watts;
@@ -284,7 +284,7 @@ T1T2Screen::T1T2Screen() : Screen()
 
 void T1T2Screen::update(unsigned long ulNow)
 {
-  m_ulNextUpdate = (unsigned long)-1; //ulNow + 20;
+  m_ulNextUpdate = (unsigned long)-1; //ulNow + 20; no need to update it ever!
 
   clearValue(0*rows);
   g_theDisplay.print(g_theWTScreen.m_tempStart);
@@ -318,7 +318,7 @@ void AboutScreen::showVersion()
 
 void AboutScreen::statusMessage(const char *msg)
 {
-  DEBUG_PRINTLN("AboutScreen::status");
+  DEBUG_PRINT("AboutScreen::status="); DEBUG_PRNTLN(msg);
   //g_theDisplay.setFont(Callibri11);  
   g_theDisplay.clear(0, g_theDisplay.displayWidth() - 1, 6, g_theDisplay.displayRows() - 1);
   g_theDisplay.setCursor(0, 6);
